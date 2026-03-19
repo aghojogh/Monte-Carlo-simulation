@@ -1,8 +1,8 @@
 """
 numpy_project.py
 ================
-A NumPy showcase covering three mini-projects:
-  1. Monte Carlo estimation of PI number
+A fun NumPy showcase covering three mini-projects:
+  1. Monte Carlo estimation of π
   2. 2-D Random Walk simulation
   3. Matrix Algebra playground
 """
@@ -36,7 +36,7 @@ for n in [1_000, 10_000, 100_000, 1_000_000]:
     est = estimate_pi(n)
     error = abs(est - np.pi)
     print(f"  n={n:>10,}  →  π ≈ {est:.6f}  (error: {error:.6f})")
-print(f"\n  True π = {np.pi:.6f}")
+print(f"\n  True PI = {np.pi:.6f}")
 
 
 # ──────────────────────────────────────────────
@@ -44,18 +44,27 @@ print(f"\n  True π = {np.pi:.6f}")
 # ──────────────────────────────────────────────
 def random_walk_2d(n_steps: int = 10_000, n_walkers: int = 5):
     """
-    Simulate several independent 2-D random walkers.
-    Each step moves ±1 in both x and y independently.
-    Returns the final positions and the max displacement reached.
+    Simulate 2-D random walkers using complex numbers as coordinates.
+
+    The key insight: a 2-D point (x, y) is the same as the complex number
+    x + y*j. This means:
+      - One random step = pick from [right, left, up, down]
+                        = pick from [1, -1, 1j, -1j]
+      - Distance from origin = abs(complex number)    ← no more np.linalg.norm!
+      - Position over time   = np.cumsum(steps)       ← same as before
+
+    Harder to think of, but once you see it — beautifully short to write.
     """
-    # Steps: shape (n_steps, n_walkers, 2)
-    steps = np.random.choice([-1, 1], size=(n_steps, n_walkers, 2))
-    # Cumulative sum along steps axis → positions over time
-    positions = np.cumsum(steps, axis=0)       # (n_steps, n_walkers, 2)
-    final_positions = positions[-1]            # (n_walkers, 2)
-    final_distances = np.linalg.norm(final_positions, axis=1)
-    max_distances = np.max(np.linalg.norm(positions, axis=2), axis=0)
-    return final_positions, final_distances, max_distances
+    DIRECTIONS = np.array([1, -1, 1j, -1j])           # the four compass steps
+
+    steps     = np.random.choice(DIRECTIONS, size=(n_steps, n_walkers))
+    positions = np.cumsum(steps, axis=0)               # complex positions over time
+
+    final           = positions[-1]                    # where each walker ended up
+    final_distances = np.abs(final)                    # distance = magnitude of complex number
+    max_distances   = np.abs(positions).max(axis=0)    # furthest point ever reached
+
+    return final, final_distances, max_distances
 
 
 print("\n" + "=" * 50)
@@ -63,7 +72,7 @@ print("2. 2-D RANDOM WALK  (10,000 steps, 5 walkers)")
 print("=" * 50)
 finals, final_dists, max_dists = random_walk_2d()
 for i, (pos, fd, md) in enumerate(zip(finals, final_dists, max_dists)):
-    print(f"  Walker {i+1}: final=({pos[0]:+6.0f}, {pos[1]:+6.0f})  "
+    print(f"  Walker {i+1}: final=({pos.real:+6.0f}, {pos.imag:+6.0f})  "
           f"dist from origin={fd:7.2f}  max dist reached={md:7.2f}")
 
 # Theoretical RMS displacement for 2-D walk: sqrt(n_steps)
@@ -113,5 +122,5 @@ print(f"\n  Singular values (SVD): {np.round(S, 4)}")
 print(f"  Reconstruction error : {np.max(np.abs(U @ np.diag(S) @ Vt - A)):.2e}")
 
 print("\n" + "=" * 50)
-print("It is all done.")
+print("All done.")
 print("=" * 50)
